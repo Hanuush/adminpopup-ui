@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>AdminPopup</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&family=Inter:wght@400;500;600;700&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --accent:  #e63946;
+  --bg:      #0a0a0f;
+  --text:    #f0f0f0;
+  --radius:  14px;
+}
+
+html, body {
+  width: 100vw; height: 100vh;
+  background: transparent;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Inter', sans-serif;
+  overflow: hidden;
+}
+
+#overlay {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.92);
+  align-items: center; justify-content: center;
+  z-index: 9999;
+}
+
+#overlay.active { display: flex; }
+
+body::before {
+  content: '';
+  position: fixed; inset: 0;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0px, transparent 3px,
+    rgba(0,0,0,0.08) 3px, rgba(0,0,0,0.08) 4px
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+
+.card {
+  position: relative; z-index: 1;
+  background: var(--bg);
+  border: 1.5px solid var(--accent);
+  border-radius: var(--radius);
+  width: min(800px, 92vw);
+  max-height: 88vh;
+  overflow-y: auto;
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,0.04),
+    0 0 80px -10px var(--accent),
+    0 30px 80px rgba(0,0,0,0.8);
+  animation: rise 0.45s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(28px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.top-bar {
+  height: 5px;
+  background: linear-gradient(90deg, transparent 0%, var(--accent) 30%, var(--accent) 70%, transparent 100%);
+  border-radius: var(--radius) var(--radius) 0 0;
+}
+
+.content { padding: 32px 40px 36px; }
+
+.header { text-align: center; margin-bottom: 20px; }
+
+.server-badge {
+  display: inline-block;
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 11px; font-weight: 700;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  padding: 3px 12px;
+  border-radius: 100px;
+  margin-bottom: 14px;
+  opacity: 0.85;
+}
+
+.title {
+  font-family: 'Rajdhani', sans-serif;
+  font-size: clamp(22px, 3vw, 34px);
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  line-height: 1.15;
+  margin-bottom: 8px;
+}
+
+.subtitle { font-size: 13px; color: rgba(255,255,255,0.45); letter-spacing: 0.8px; }
+
+.divider {
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+  margin: 20px 0;
+}
+
+.body-text { font-size: 14.5px; line-height: 1.8; color: var(--text); white-space: pre-line; }
+
+.footer {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-top: 28px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.issued-meta { font-size: 11.5px; line-height: 1.7; color: rgba(255,255,255,0.3); }
+.issued-meta strong { color: var(--accent); font-weight: 600; }
+
+.countdown-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+
+.ring-wrap { position: relative; width: 76px; height: 76px; }
+.ring-wrap svg {
+  position: absolute; top: 0; left: 0;
+  transform: rotate(-90deg);
+}
+
+.ring-track { fill: none; stroke: rgba(255,255,255,0.07); stroke-width: 5; }
+
+.ring-fill {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 5;
+  stroke-linecap: round;
+  stroke-dasharray: 213;
+  stroke-dashoffset: 0;
+  transition: stroke-dashoffset 1s linear;
+  filter: drop-shadow(0 0 6px var(--accent));
+}
+
+.ring-number {
+  position: absolute; top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  font-family: 'Rajdhani', sans-serif;
+  font-size: 14px; font-weight: 700;
+  color: var(--accent);
+  white-space: nowrap;
+  letter-spacing: 0.5px;
+}
+
+.ring-caption {
+  font-size: 10px;
+  letter-spacing: 1.2px;
+  color: rgba(255,255,255,0.25);
+  text-transform: uppercase;
+}
+
+/* Glow pulse on ring */
+@keyframes glow-pulse {
+  0%, 100% { filter: drop-shadow(0 0 4px var(--accent)); }
+  50%       { filter: drop-shadow(0 0 12px var(--accent)); }
+}
+
+.ring-fill { animation: glow-pulse 2s ease-in-out infinite; }
+
+.card::-webkit-scrollbar { width: 4px; }
+.card::-webkit-scrollbar-track { background: transparent; }
+.card::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 4px; }
+</style>
+</head>
+<body>
+
+<div id="overlay">
+  <div class="card" id="popup-card">
+    <div class="top-bar"></div>
+    <div class="content">
+      <div class="header">
+        <div class="server-badge" id="el-server"></div>
+        <div class="title" id="el-title"></div>
+        <div class="subtitle" id="el-subtitle"></div>
+      </div>
+      <div class="divider"></div>
+      <div class="body-text" id="el-body"></div>
+      <div class="footer">
+        <div class="issued-meta">
+          Issued by &nbsp;<strong id="el-issued"></strong><br/>
+          <span id="el-server2"></span>
+        </div>
+        <div class="countdown-block" id="cd-block">
+          <div class="ring-wrap">
+            <svg viewBox="0 0 76 76" width="76" height="76">
+              <circle class="ring-track" cx="38" cy="38" r="34"/>
+              <circle class="ring-fill"  cx="38" cy="38" r="34" id="ring"/>
+            </svg>
+            <div class="ring-number" id="ring-num">--:--</div>
+          </div>
+          <div class="ring-caption">Auto-dismiss</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  var countdownIv = null;
+  var CIRC = 213;
+
+  function applyData(data) {
+    // Colors
+    if (data.accentColor) document.documentElement.style.setProperty('--accent', data.accentColor);
+    if (data.bgColor)     document.documentElement.style.setProperty('--bg',     data.bgColor);
+    if (data.textColor)   document.documentElement.style.setProperty('--text',   data.textColor);
+
+    // Content
+    document.getElementById('el-server').textContent   = data.serverName  || '';
+    document.getElementById('el-title').textContent    = data.title        || '';
+    document.getElementById('el-subtitle').textContent = data.subtitle     || '';
+    document.getElementById('el-body').textContent     = data.bodyText     || '';
+    document.getElementById('el-issued').textContent   = data.issuedBy     || '';
+    document.getElementById('el-server2').textContent  = data.serverName   || '';
+
+    // Show
+    document.getElementById('overlay').classList.add('active');
+
+    // Countdown ring
+    var total = parseInt(data.countdown) || 0;
+    var left  = total;
+    var ring  = document.getElementById('ring');
+    var num   = document.getElementById('ring-num');
+    var block = document.getElementById('cd-block');
+
+    if (countdownIv) clearInterval(countdownIv);
+
+    if (total <= 0) {
+      block.style.display = 'none';
+      return;
+    }
+
+    block.style.display = 'flex';
+
+    function setRing(n) {
+      var pct = n / total;
+      ring.style.strokeDashoffset = CIRC * (1 - pct);
+      var m = Math.floor(n / 60);
+      var s = String(n % 60).padStart(2, '0');
+      num.textContent = m + ':' + s;
+    }
+
+    setRing(left);
+
+    countdownIv = setInterval(function() {
+      left--;
+      setRing(left);
+      if (left <= 0) clearInterval(countdownIv);
+    }, 1000);
+  }
+
+  function hide() {
+    document.getElementById('overlay').classList.remove('active');
+    if (countdownIv) clearInterval(countdownIv);
+  }
+
+  // Listen for messages from FiveM DUI (SendDuiMessage)
+  window.addEventListener('message', function(e) {
+    var data;
+    try { data = typeof e.data === 'string' ? JSON.parse(e.data) : e.data; }
+    catch(err) { return; }
+    if (!data || !data.action) return;
+    if (data.action === 'show') applyData(data);
+    if (data.action === 'hide') hide();
+  });
+</script>
+</body>
+</html>
